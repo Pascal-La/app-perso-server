@@ -17,9 +17,9 @@ const registerUser = asyncHandler(async (req, res) => {
     if (usernameTaken) errors.username = "Ce pseudo est déjà pris";
 
     //* If username has spaces, replace them with "_"
-    // We still have to check if username already exist after
-    // removing the spaces, if we don't "USER 42" and "USER_42"
-    // are different at first and will be added to the db
+    // We still have to check if username already exist after removing the spaces,
+    // if we don't "USER 42" and "USER_42" are going to be different at first
+    // and will be added to the db as "USER_42" which will make a conflict
     if (username.includes(" ")) {
       sanitizedUsername = username.split(" ").join("_").toUpperCase();
       const usernameTaken = await User.findOne({
@@ -28,7 +28,7 @@ const registerUser = asyncHandler(async (req, res) => {
       if (usernameTaken) errors.username = "Ce pseudo est déjà pris";
     } else sanitizedUsername = username.toUpperCase();
 
-    // If user has already subscribed
+    // If user already has an account with this email
     const emailExists = await User.findOne({ email });
     if (emailExists) errors.email = "Cet utilisateur existe déjà";
 
@@ -57,7 +57,7 @@ const registerUser = asyncHandler(async (req, res) => {
     if (Object.keys(errors).length > 0) throw errors;
 
     // username will be uppercased and email lowercased to avoid case sensitive
-    // issues and make username unique despite some uppercased letters
+    // issues and make true unique usernames despite some uppercased letters
     const user = await User.create({
       username: sanitizedUsername.toUpperCase(),
       email: email.toLowerCase(),
@@ -72,6 +72,9 @@ const registerUser = asyncHandler(async (req, res) => {
         email: user.email,
         picture: user.picture,
         createdAt: user.createdAt,
+        // the token WON'T CONTAIN THE PICTURE, which is
+        // way too heavy and has made some update issues
+        // it will be stored in the localstorage instead
         token: jwt.sign(
           {
             _id: user._id,
@@ -111,14 +114,14 @@ const loginUser = asyncHandler(async (req, res) => {
       errors.username = "Le pseudo ne doit pas être vide";
     }
 
-    // Check if password is correct
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) errors.password = "Mot de passe incorrect";
-
     // Password errors
     if (password.trim().length < 6) errors.password = "6 caractères minimum";
     if (password.trim() === "")
       errors.password = "Le mot de passe ne doit pas être vide";
+
+    // Check if password is correct
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) errors.password = "Mot de passe incorrect";
 
     if (Object.keys(errors).length > 0) throw errors;
 
@@ -129,6 +132,9 @@ const loginUser = asyncHandler(async (req, res) => {
         email: user.email,
         picture: user.picture,
         createdAt: user.createdAt,
+        // the token WON'T CONTAIN THE PICTURE, which is
+        // way too heavy and has made some update issues
+        // it will be stored in the localstorage instead
         token: jwt.sign(
           {
             _id: user._id,
@@ -163,7 +169,7 @@ const updateUser = asyncHandler(async (req, res) => {
     if (usernameTaken && usernameTaken.id !== userId)
       errors.username = "Ce pseudo est déjà pris";
 
-    // Username empty errors
+    // Username empty error
     if (username.trim() === "")
       errors.username = "Le pseudo ne doit pas être vide";
 
@@ -204,12 +210,14 @@ const updateUser = asyncHandler(async (req, res) => {
         email: updateOneUser.email,
         picture: updateOneUser.picture,
         createdAt: updateOneUser.createdAt,
+        // the token !WON'T CONTAIN THE PICTURE, which is
+        // way too heavy and has made some update issues
+        // it will be stored in the localstorage instead
         token: jwt.sign(
           {
             _id: updateOneUser._id,
             username: updateOneUser.username,
             email: updateOneUser.email,
-            // picture: updateOneUser.picture,
             createdAt: updateOneUser.createdAt,
           },
           process.env.JWT_SECRET,
@@ -225,6 +233,7 @@ const updateUser = asyncHandler(async (req, res) => {
 });
 
 //* ========================= CONFIRM DELETE =========================
+//  =============== Check credentials before deleting ================
 
 const confirmDelete = asyncHandler(async (req, res) => {
   const { username, email, password, token } = req.body;
@@ -266,6 +275,9 @@ const confirmDelete = asyncHandler(async (req, res) => {
         email: user.email,
         picture: user.picture,
         createdAt: user.createdAt,
+        // the token WON'T CONTAIN THE PICTURE, which is
+        // way too heavy and has made some update issues
+        // it will be stored in the localstorage instead
         token: jwt.sign(
           {
             _id: user._id,
@@ -287,6 +299,7 @@ const confirmDelete = asyncHandler(async (req, res) => {
 });
 
 //* ======================== DELETE USER ========================
+//  ========= Delete account after checking credentials =========
 
 const deleteUser = asyncHandler(async (req, res) => {
   User.deleteOne({ _id: req.params.id })

@@ -17,8 +17,11 @@ app.use(
     origin: "*",
   })
 );
-app.use(express.json({limit: '1000kb'}));
-app.use(express.urlencoded({limit: '1000kb'}));
+
+// limit size of uploaded picture
+app.use(express.json({ limit: "1000kb" }));
+app.use(express.urlencoded({ limit: "1000kb" }));
+
 app.use(express.json()); // req.body, to accept JSON Data
 
 app.use("/api/tasks", taskRoutes);
