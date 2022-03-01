@@ -2,9 +2,11 @@
   "name": "server",
   "version": "1.0.0",
   "main": "index.js",
+  "repository": "https://github.com/Pascal-La/app-perso-server.git",
+  "author": "PascalPromoTrinity <lapascal89@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": " nodemon index.js"
+    "start": "nodemon index.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
